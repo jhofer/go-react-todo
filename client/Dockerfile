@@ -1,11 +1,11 @@
-FROM node:6.5.0-slim
+# Stage 0, based on Node.js, to build and compile the client
+FROM node:9.11 as node
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+RUN yarn install
+#ARG env=prod
+RUN yarn dist
 
-COPY package.json /usr/src/app/
-ENV NODE_ENV development
-RUN npm install
-
-#COPY . /usr/src/app
-#CMD [ "bash", "sleep 10m" ]
+# Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
+FROM nginx:1.13
+COPY --from=node /dist/ /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf

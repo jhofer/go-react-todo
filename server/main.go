@@ -3,13 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"gopkg.in/gorp.v1"
+	"log"
+	"net/http"
+	"os"
 )
 
 var dbmap = initDb()
@@ -17,8 +16,10 @@ var dbmap = initDb()
 func getTodos(c *gin.Context) {
 	// fetch all rows
 	var todos []Todo
+
 	var err error
 	_, err = dbmap.Select(&todos, "select * from todos order by id")
+	todos = append(todos, newTodo("hallo"))
 	checkErr(err, "Select failed")
 	c.JSON(http.StatusOK, todos)
 }

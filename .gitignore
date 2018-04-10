@@ -1,3 +1,6 @@
 server/gin-bin
 server/main
+server/vendor
 client/node_modules
+client/.fusebox
+client/dist
