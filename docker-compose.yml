@@ -1,19 +1,32 @@
-version: '2'
+version: '3'
 services:
     postgres:
         image: postgres
         environment:
             - POSTGRES_PASSWORD=postgres
+        networks:
+            - backend
 
-    server:
+    backend:
         build: ./server
-        command: ./main
+        command: bash -c "/go/bin/app"
         depends_on:
-            - "postgres"
+            - postgres
         environment:
             - POSTGRES_PASSWORD=postgres
-    
+        networks:
+            - backend
+            - frontend
+
     nginx:
         build: ./client
         ports: 
             - "8002:80"
+        depends_on:
+            - backend
+        networks:
+            - frontend
+
+networks:
+    frontend:
+    backend:
