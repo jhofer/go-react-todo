@@ -13,6 +13,8 @@ RUN mkdir -p $$GOPATH/bin && \
 ADD . /go/src/app
 WORKDIR /go/src/app
 
-RUN ls
-# serve the app
-CMD ls & glide update && gin run main.go
+#install depdencies
+RUN glide update 
+#Compile app
+RUN go install
+CMD $GOPATH/bin/app
