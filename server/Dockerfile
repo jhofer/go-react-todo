@@ -17,4 +17,9 @@ WORKDIR /go/src/app
 RUN glide update 
 #Compile app
 RUN go install
-CMD $GOPATH/bin/app
+
+COPY ./wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
+CMD ["/wait-for-it.sh", "postgres:5432", "--", "/go/bin/app"]
+
+

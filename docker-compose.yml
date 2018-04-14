@@ -7,9 +7,8 @@ services:
         networks:
             - backend
 
-    backend:
+    golang:
         build: ./server
-        command: bash -c "/go/bin/app"
         depends_on:
             - postgres
         environment:
@@ -21,9 +20,9 @@ services:
     nginx:
         build: ./client
         ports: 
-            - "8002:80"
+            - "80:80"
         depends_on:
-            - backend
+            - golang
         networks:
             - frontend
 
