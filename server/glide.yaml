@@ -1,7 +1,0 @@
-package: .
-import:
-- package: github.com/gin-gonic/gin
-  version: ^1.2.0
-- package: github.com/lib/pq
-- package: gopkg.in/gorp.v1
-  version: ^2.1.0

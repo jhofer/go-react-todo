@@ -1,6 +1,10 @@
 server/gin-bin
 server/main
-server/vendor
+server/bin
+server/pkg
+server/src/github.com
+server/src/golang.org
+**/vendor
 client/node_modules
 client/.fusebox
 client/dist

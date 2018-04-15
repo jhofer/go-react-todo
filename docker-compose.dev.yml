@@ -9,7 +9,7 @@ services:
         build: ./server
         command: bash -c "glide update && gin run main.go"
         volumes:
-            - ./server:/go/src/app
+            - ./server/src/app:/go/src/app
         ports:
             - "3000:3000"
         environment:

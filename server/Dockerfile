@@ -10,7 +10,7 @@ RUN mkdir -p $$GOPATH/bin && \
   go get github.com/codegangsta/gin
 
 # define work directory
-ADD . /go/src/app
+ADD ./src/app /go/src/app
 WORKDIR /go/src/app
 
 #install depdencies
