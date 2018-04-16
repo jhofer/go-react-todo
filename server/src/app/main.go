@@ -1,27 +1,24 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/lib/pq"
-	"gopkg.in/gorp.v1"
 	"log"
 	"net/http"
 	"os"
 )
 
-var dbmap = initDb()
+import . "app/domain"
+
+var db = initDb()
 
 func getTodos(c *gin.Context) {
 	// fetch all rows
 	var todos []Todo
-
-	var err error
-	_, err = dbmap.Select(&todos, "select * from todos order by id")
-	todos = append(todos, newTodo("hallo"))
-	checkErr(err, "Select failed")
+	db.Find(&todos)
 	c.JSON(http.StatusOK, todos)
 }
 
@@ -29,63 +26,72 @@ func getTodo(c *gin.Context) {
 	// fetch one row
 	id := c.Params.ByName("id")
 	var todo Todo
-	var err error
-	err = dbmap.SelectOne(&todo, "select * from todos where id = $1", id)
+	result := db.First(&todo, id)
 
-	if err == nil {
-		c.JSON(http.StatusOK, todo)
+	if result.RecordNotFound() {
+		c.JSON(http.StatusNotFound, nil)
 		return
 	}
 
-	c.JSON(http.StatusNotFound, nil)
+	c.JSON(http.StatusOK, todo)
 }
 
 func createTodo(c *gin.Context) {
 	var todo Todo
 	// check for errors
 	if c.BindJSON(&todo) == nil {
-		t := newTodo(todo.Title)
-		var err = dbmap.Insert(&t)
-		checkErr(err, "Insert failed")
-		c.JSON(http.StatusCreated, t)
+		t := NewTodo(todo.Title)
+		if db.NewRecord(t) {
+			db.Create(&t)
+			c.JSON(http.StatusCreated, t)
+		} else {
+			c.JSON(http.StatusForbidden, t)
+		}
+	} else {
+		c.JSON(http.StatusNotAcceptable, "Not acceptable")
 	}
 }
 
 func updateTodo(c *gin.Context) {
 	id := c.Params.ByName("id")
-	log.Println(id)
 	var todo Todo
-	var err error
-	err = dbmap.SelectOne(&todo, "select * from todos where id = $1", id)
+	result := db.First(&todo, id)
 
-	if err == nil && c.BindJSON(&todo) == nil {
-		dbmap.Update(&todo)
+	if result.RecordNotFound() {
+		c.JSON(http.StatusNotFound, nil)
+		return
+	}
+
+	if c.BindJSON(&todo) == nil {
+		db.Update(&todo)
 		c.JSON(http.StatusOK, todo)
 		return
 	}
 
-	c.JSON(http.StatusNotFound, nil)
-	checkErr(err, "Select failed")
 }
 
 func deleteTodo(c *gin.Context) {
 	id := c.Params.ByName("id")
 
 	// delete row by PK
+	log.Println(id)
+
+	// fetch one row
+
 	var todo Todo
-	var err error
-	var count int64
-	err = dbmap.SelectOne(&todo, "select * from todos where id = $1", id)
-	count, err = dbmap.Delete(&todo)
-	log.Println(count)
-	if count == 1 {
-		log.Println("Rows deleted:", count)
-		c.JSON(http.StatusOK, todo)
+	result := db.First(&todo, id).Delete(&todo)
+
+	if result.RecordNotFound() {
+		c.JSON(http.StatusNotFound, nil)
 		return
 	}
 
-	c.JSON(http.StatusNotFound, nil)
-	checkErr(err, "Delete failed")
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	c.JSON(http.StatusOK, todo)
 }
 
 func main() {
@@ -107,7 +113,7 @@ func main() {
 	r.Run(":3001")
 }
 
-func initDb() *gorp.DbMap {
+func initDb() *gorm.DB {
 	dbinfo := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
 		"postgres",
 		os.Getenv("POSTGRES_PASSWORD"),
@@ -116,22 +122,12 @@ func initDb() *gorp.DbMap {
 		"postgres",
 	)
 
-	db, err := sql.Open("postgres", dbinfo)
-	checkErr(err, "sql.Open failed")
+	db, err := gorm.Open("postgres", dbinfo)
+	checkErr(err, "gorm.Open failed")
 
-	// construct a gorp DbMap
-	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
+	db.AutoMigrate(&Todo{})
 
-	// add a table, setting the table name to 'posts' and
-	// specifying that the Id property is an auto incrementing PK
-	dbmap.AddTableWithName(Todo{}, "todos").SetKeys(true, "id")
-
-	// create the table. in a production system you'd generally
-	// use a migration tool, or create the tables via scripts
-	err = dbmap.CreateTablesIfNotExists()
-	checkErr(err, "Create tables failed")
-
-	return dbmap
+	return db
 }
 
 func checkErr(err error, msg string) {
