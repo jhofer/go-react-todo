@@ -1,31 +1,15 @@
 import * as React from "react";
-import Footer from "./footer.jsx";
-import AddTodo from "../containers/addtodo.jsx";
-import VisibleTodoList from "../containers/visibletodolist.jsx";
-import { getTodos } from "../actions/index.jsx";
-import { connect } from "react-redux";
+import TodoList from "./todolist";
+import Context from "../context";
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    //this.handlers = createHandlers(this.props.dispatch);
-    // binders
-  }
+const context = new Context();
 
-  componentDidMount() {
-    this.props.dispatch(getTodos());
-  }
-
+export default class App extends React.Component {
   render() {
     return (
       <div>
-        asdf
-        <AddTodo />
-        <VisibleTodoList />
-        <Footer />
+        <TodoList context={context} />
       </div>
     );
   }
 }
-
-export default connect()(App);
